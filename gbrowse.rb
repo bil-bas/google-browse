@@ -14,6 +14,8 @@ class GBrowser
     def search(*args); new *args; end
   end
 
+  def quit?; @quit end
+
   def initialize(query, options = {})
     options = {
       results_per_page: 10,
@@ -26,7 +28,13 @@ class GBrowser
     @agent = Mechanize.new
 
     retrieve_initial_page
-    list_links
+
+    @quit = false
+    
+    begin
+      list_links
+      navigate
+    end until quit?
   end
 
   def retrieve_initial_page
@@ -37,6 +45,7 @@ class GBrowser
 
     query_form.submit query_form.button_with(name: 'btnK')
     @page_number = 1 # Page number starts from 1 for sense.
+    @more_pages = true
     read_links
   end
 
@@ -50,14 +59,17 @@ class GBrowser
   end
 
   def retrieve_next_page
-    page = @agent.get next_page_link
-
-    if page == :no_more_pages
-      :no_more_pages
+    link = next_page_link
+    
+    if link == :no_more_pages
+      @more_pages = false
     else
+      page = @agent.get link
       read_links
     end
   end
+
+  def more_pages?; @more_pages end
 
   # Parse all the links found on the current page.
   def read_links
@@ -74,8 +86,22 @@ class GBrowser
     end
   end
 
+  # Index, in @links, of the first link to show.
   def first_link_index; (@page_number - 1) * @results_per_page end
-  def last_link_index; first_link_index + @results_per_page - 1 end
+
+  # Index, in @links, of the last link to show.
+  def last_link_index
+    if more_pages?
+      first_link_index + @results_per_page - 1
+    else
+      @links.size - 1
+    end
+  end
+
+  # Are we showing the last page?
+  def last_page?
+    !more_pages? && last_link_index == (@links.size - 1)
+  end
 
   def list_links
     # Ensure we have enough links downloaded to display them.
@@ -85,23 +111,21 @@ class GBrowser
 
     num_columns = last.to_s.length
 
-    puts "Page #{@page_number}, showing results #{first} to #{last} for '#{@query}'"
+    puts "Page #{@page_number}, showing results #{first} to #{last} for: #{@query}"
     @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
       puts
       puts "#{i.to_s.rjust num_columns}: #{link.title}"
       puts "#{' ' * num_columns}  #{link.url}"
     end
-
-    navigate
-    list_links
   end
 
   def navigate
     # Ask the user for instructions.
     puts
 
+    next_ = last_page? ? '' : 'N(ext)/'
     previous = @page_number == 1 ? '' : 'P(revious)/'
-    print "Enter number of link to browse or N(ext)/#{previous}R(efresh)/Q(uit): "
+    print "Enter number of link to browse or #{next_}#{previous}R(efresh)/Q(uit): "
     input = $stdin.gets.strip
 
     case input
@@ -117,7 +141,7 @@ class GBrowser
 
     when 'Q', 'q' # Quit.
       puts
-      exit
+      @quit = true
 
     else # Follow link to page.
       link_index = input.to_i - 1
@@ -162,7 +186,7 @@ cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 
 
 query = ARGV.join " "
 
-GBrowser.search "cheese", results_per_page: opts[:number]
+GBrowser.search query, results_per_page: opts[:number]
 
 
 
