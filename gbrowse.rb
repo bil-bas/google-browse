@@ -8,7 +8,6 @@ Bundler.require :default
 
 class GBrowser
   DEFAULT_RESULTS_PER_PAGE = 10
-  NUMBER_COLUMNS = 3 # Number of columns to justify link numbers in.
 
   class << self
     private :new
@@ -84,11 +83,13 @@ class GBrowser
 
     first, last = first_link_index + 1, last_link_index + 1
 
+    num_columns = last.to_s.length
+
     puts "Page #{@page_number}, showing results #{first} to #{last} for '#{@query}'"
-    @links[first..last].each.with_index(first) do |link, i|
+    @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
       puts
-      puts "#{i.to_s.rjust NUMBER_COLUMNS}: #{link.title}"
-      puts "#{' ' * NUMBER_COLUMNS}  #{link.url}"
+      puts "#{i.to_s.rjust num_columns}: #{link.title}"
+      puts "#{' ' * num_columns}  #{link.url}"
     end
 
     navigate
@@ -98,12 +99,14 @@ class GBrowser
   def navigate
     # Ask the user for instructions.
     puts
-    print "Enter number of link or N(ext)/P(revious)/R(efresh)/Q(uit): "
+
+    previous = @page_number == 1 ? '' : 'P(revious)/'
+    print "Enter number of link to browse or N(ext)/#{previous}R(efresh)/Q(uit): "
     input = $stdin.gets.strip
 
     case input
     when 'N', 'n', '' # Next page.
-      @page_number += 1 # TODO: Deal with running out of pages.
+      @page_number += 1
 
     when 'P', 'p' # Previous page.
       @page_number -= 1 if @page_number > 1
