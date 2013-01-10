@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+# Google search CLI browser that can open links into a browser.
+
+require 'bundler/setup'
+require 'slop'
+require 'google-browse'
+
+# Manage CLI options.
+results_per_page = GoogleBrowse::Browser::DEFAULT_RESULTS_PER_PAGE
+opts = Slop.parse help: true do
+  banner "Usage: #{File.basename $0} [options] ['QUERY-STRING']"
+
+  on 'n=', 'number=', 
+    "Number of results per page (default: #{results_per_page})",
+    as: Integer, default: results_per_page
+end
+
+exit 0 if opts.help?
+
+def cli_error(opts, message)
+  puts "ERROR: #{message}"
+  puts 
+  puts opts
+  exit 0
+end
+
+cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 1
+
+# BUG: No idea why the -n option STAYS in argv ;(
+query = ARGV.empty? ? nil : ARGV.join(" ")
+
+begin
+  GoogleBrowse.search query: query, results_per_page: opts[:number]
+rescue => ex
+  puts
+  puts "FATAL ERROR: #{ex.message}"
+  puts
+  exit 0
+end
+
+
+
+
+
