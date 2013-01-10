@@ -21,23 +21,25 @@ class GBrowser
       results_per_page: 10,
     }.merge! options
 
-    @query = query
     @results_per_page = options[:results_per_page]
     
     @links = [] # All the links retrieved are cached here.
     @agent = Mechanize.new
 
-    retrieve_initial_page
+    retrieve_initial_page query
 
     @quit = false
-    
+
     begin
       list_links
       navigate
     end until quit?
   end
 
-  def retrieve_initial_page
+  def retrieve_initial_page(query)
+    @query = query
+    @links.clear
+
     # Go to Google home page and create an initial query.
     google = @agent.get 'http://google.com'
     query_form = google.form_with name: 'f'
@@ -46,6 +48,7 @@ class GBrowser
     query_form.submit query_form.button_with(name: 'btnK')
     @page_number = 1 # Page number starts from 1 for sense.
     @more_pages = true
+
     read_links
   end
 
@@ -125,22 +128,23 @@ class GBrowser
 
     next_ = last_page? ? '' : 'N(ext)/'
     previous = @page_number == 1 ? '' : 'P(revious)/'
-    print "Enter number of link to browse or #{next_}#{previous}R(efresh)/Q(uit): "
+    print "Enter number of link to browse or #{next_}#{previous}R(efresh)/S(earch)/Q(uit): "
     input = $stdin.gets.strip
 
-    case input
-    when 'N', 'n', '' # Next page.
+    case input.upcase
+    when 'N', '' # Next page.
       @page_number += 1
 
-    when 'P', 'p' # Previous page.
+    when 'P' # Previous page.
       @page_number -= 1 if @page_number > 1
 
-    when 'R', 'r' # Clear cache completely and get first page again.      
-      @links.clear
-      retrieve_initial_page
+    when 'R' # Clear cache completely and get first page again.      
+      retrieve_initial_page @query
 
-    when 'Q', 'q' # Quit.
-      puts
+    when 'S' # Search
+      input_new_search
+
+    when 'Q' # Quit.
       @quit = true
 
     else # Follow link to page.
@@ -158,6 +162,13 @@ class GBrowser
     end 
 
     puts   
+  end
+
+  def input_new_search
+    puts
+    print "Enter new search string: "
+    input = $stdin.gets.strip
+    retrieve_initial_page input
   end
 end
 
