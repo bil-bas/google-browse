@@ -26,14 +26,12 @@ class GBrowser
     @links = [] # All the links retrieved are cached here.
     @agent = Mechanize.new
 
-    retrieve_initial_page query
-
     @quit = false
 
-    begin
-      list_links
-      navigate
-    end until quit?
+    retrieve_initial_page query
+    list_links
+      
+    navigate until quit?
   end
 
   def retrieve_initial_page(query)
@@ -76,15 +74,17 @@ class GBrowser
 
   # Parse all the links found on the current page.
   def read_links
-    query_links = @agent.page.search "h3.r a"
-    query_links.each do |link|
+    results = @agent.page.search 'li.g'
+    results.each do |result|
+      link = result.search('h3.r a').first
+      body = result.search('span.st').first
       # Extract the proper URL from the link, disregarding any that aren't full uris
       # (e.g. google image/video links)
       uri = URI.extract(link[:href]).first
 
       if uri
         url = uri[/[^\&]*/] # Trim off the trailing crap.
-        @links << OpenStruct.new(title: link.text, url: url)
+        @links << OpenStruct.new(title: link.text, url: url, body: body.text)
       end
     end
   end
@@ -117,9 +117,12 @@ class GBrowser
 
       puts "Page #{@page_number}, showing results #{first} to #{last} for: #{@query}"
       @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
+        indent = ' ' * (num_columns + 2)
         puts
-        puts "#{i.to_s.rjust num_columns}: #{link.title}"
-        puts "#{' ' * num_columns}  #{link.url}"
+        max_width = 80 - indent.size
+        puts "#{i.to_s.rjust num_columns}: #{limit_text link.title, max_width}"
+        puts "#{indent}#{limit_text link.body, max_width}"
+        puts "#{indent}#{link.url}"
       end
     else
       # No joy. Let's try a new search...
@@ -129,27 +132,55 @@ class GBrowser
     end
   end
 
+  def limit_text(text, length)
+    if text.size < length
+      text
+    else
+      text[0, length - 3] + '...'
+    end
+  end
+
   def navigate
     # Ask the user for instructions.
     puts
 
-    next_ = last_page? ? '' : 'N(ext)/'
-    previous = @page_number == 1 ? '' : 'P(revious)/'
-    print "Enter number of link to browse or #{next_}#{previous}R(efresh)/S(earch)/Q(uit): "
+    next_ = last_page? ? '' : 'N/'
+    previous = @page_number == 1 ? '' : 'p/'
+    print "Enter number of link to browse or [#{next_}#{previous}h/r/s/q]: "
     input = $stdin.gets.strip
 
     case input.upcase
     when 'N', '' # Next page.
       @page_number += 1
+      list_links
 
     when 'P' # Previous page.
       @page_number -= 1 if @page_number > 1
+      list_links
+
+    when 'H', '?'
+      puts <<-END_OF_TEXT
+
+Browser help
+------------
+
+N(next) - Next page (default action).
+P(revious) - Previous page.
+H(elp) - This help message.
+R(efresh) - Clear cache and re-load this search on first page.
+S(earch) - Enter a new query string.
+Q(uit) - Quit the browser.
+END_OF_TEXT
 
     when 'R' # Clear cache completely and get first page again.      
       retrieve_initial_page @query
 
+      list_links
+
     when 'S' # Search
       input_new_search
+
+      list_links
 
     when 'Q' # Quit.
       @quit = true
