@@ -165,9 +165,12 @@ class GBrowser
   end
 
   def input_new_search
-    puts
-    print "Enter new search string: "
-    input = $stdin.gets.strip
+    input = ''
+    while input.empty?
+      puts
+      print "Enter new search string: "
+      input = $stdin.gets.strip
+    end
     retrieve_initial_page input
   end
 end
