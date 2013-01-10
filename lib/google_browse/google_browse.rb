@@ -97,7 +97,8 @@ module GoogleBrowse
       results = @agent.page.search 'li.g'
       results.each do |result|
         link = result.search('h3.r a').first
-        body = result.search('span.st').first
+        body = result.search('span.st').first || OpenStruct.new(text: '')
+
         # Extract the proper URL from the link, disregarding any that aren't full uris
         # (e.g. google image/video links)
         uri = URI.extract(link[:href]).first

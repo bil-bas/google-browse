@@ -31,16 +31,10 @@ cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 
 # BUG: No idea why the -n option STAYS in argv ;(
 query = ARGV.empty? ? nil : ARGV.join(" ")
 
-begin
-  puts
-  puts "Google Browse v#{GoogleBrowse::VERSION}"
-  GoogleBrowse.search query: query, results_per_page: opts[:number]
-rescue => ex
-  puts
-  puts "FATAL ERROR: #{ex.message}"
-  puts
-  exit 0
-end
+puts
+puts "Google Browse v#{GoogleBrowse::VERSION}"
+
+GoogleBrowse.search query: query, results_per_page: opts[:number]
 
 
 
