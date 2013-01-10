@@ -4,7 +4,8 @@
 
 require 'bundler/setup'
 require 'slop'
-require 'google-browse'
+
+require_relative '../lib/google-browse'
 
 # Manage CLI options.
 results_per_page = GoogleBrowse::Browser::DEFAULT_RESULTS_PER_PAGE
@@ -31,6 +32,8 @@ cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 
 query = ARGV.empty? ? nil : ARGV.join(" ")
 
 begin
+  puts
+  puts "Google Browse v#{GoogleBrowse::VERSION}"
   GoogleBrowse.search query: query, results_per_page: opts[:number]
 rescue => ex
   puts
