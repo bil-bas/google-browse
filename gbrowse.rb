@@ -44,7 +44,7 @@ class GBrowser
     query_form.q = @query
 
     query_form.submit query_form.button_with(name: 'btnK')
-    @page_number = 1 # Page number starts from 1 for sense.
+    @page_number = 0
     @more_pages = true
 
     read_links
@@ -64,6 +64,8 @@ class GBrowser
     
     if link == :no_more_pages
       @more_pages = false
+      # Cap the page number.
+      @page_number = @links.size.div @results_per_page
     else
       page = @agent.get link
       read_links
@@ -90,7 +92,7 @@ class GBrowser
   end
 
   # Index, in @links, of the first link to show.
-  def first_link_index; (@page_number - 1) * @results_per_page end
+  def first_link_index; @page_number * @results_per_page end
 
   # Index, in @links, of the last link to show.
   def last_link_index
@@ -115,7 +117,7 @@ class GBrowser
     if first <= last
       num_columns = last.to_s.length
 
-      puts "Page #{@page_number}, showing results #{first} to #{last} for: #{@query}"
+      puts "Page #{@page_number + 1}, showing results #{first} to #{last} for: #{@query}"
       @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
         indent = ' ' * (num_columns + 2)
         puts
@@ -145,7 +147,7 @@ class GBrowser
     puts
 
     next_ = last_page? ? '' : 'N/'
-    previous = @page_number == 1 ? '' : 'p/'
+    previous = @page_number.zero? ? '' : 'p/'
     print "Enter number of link to browse or [#{next_}#{previous}h/r/s/q]: "
     input = $stdin.gets.strip
 
@@ -157,7 +159,7 @@ class GBrowser
       end
 
     when 'P' # Previous page.
-      if @page_number > 1
+      if @page_number > 0
         @page_number -= 1
         list_links
       end
