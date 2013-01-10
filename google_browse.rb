@@ -6,7 +6,7 @@ require 'ostruct'
 require 'bundler'
 Bundler.require :default
 
-class GBrowser
+class GoogleBrowse
   DEFAULT_RESULTS_PER_PAGE = 10
 
   class << self
@@ -16,7 +16,9 @@ class GBrowser
 
   def quit?; @quit end
 
-  def initialize(query, options = {})
+  # @option :results_per_page [Integer] (10) Number of results to show per page.
+  # @option :query [String] Initial search string.
+  def initialize(options = {})
     options = {
       results_per_page: 10,
     }.merge! options
@@ -28,9 +30,14 @@ class GBrowser
 
     @quit = false
 
-    retrieve_initial_page query
+    if options[:query]
+      retrieve_initial_page options[:query]
+    else
+      input_new_search
+    end
+
+    puts
     list_links
-      
     navigate until quit?
   end
 
@@ -212,7 +219,7 @@ END_OF_TEXT
     input = ''
     while input.empty?
       puts
-      print "Enter new search string: "
+      print "Enter search string: "
       input = $stdin.gets.strip
     end
     retrieve_initial_page input
@@ -223,11 +230,11 @@ end
 
 # Manage CLI options.
 opts = Slop.parse help: true do
-  banner "Usage: #{File.basename $0} [options] 'QUERY-STRING'"
+  banner "Usage: #{File.basename $0} [options] ['QUERY-STRING']"
 
   on 'n=', 'number=', 
-    "Number of results per page (default: #{GBrowser::DEFAULT_RESULTS_PER_PAGE})",
-    as: Integer, default: GBrowser::DEFAULT_RESULTS_PER_PAGE
+    "Number of results per page (default: #{GoogleBrowse::DEFAULT_RESULTS_PER_PAGE})",
+    as: Integer, default: GoogleBrowse::DEFAULT_RESULTS_PER_PAGE
 end
 
 exit 0 if opts.help?
@@ -239,13 +246,12 @@ def cli_error(opts, message)
   exit 0
 end
 
-cli_error opts, 'Query string is required!' if ARGV.empty?
 cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 1
 
 # BUG: No idea why the -n option STAYS in argv ;(
-query = ARGV.join " "
+query = ARGV.empty? ? nil : ARGV.join(" ")
 
-GBrowser.search query, results_per_page: opts[:number]
+GoogleBrowse.search query: query, results_per_page: opts[:number]
 
 
 
