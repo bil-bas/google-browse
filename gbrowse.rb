@@ -112,13 +112,20 @@ class GBrowser
 
     first, last = first_link_index + 1, last_link_index + 1
 
-    num_columns = last.to_s.length
+    if first <= last
+      num_columns = last.to_s.length
 
-    puts "Page #{@page_number}, showing results #{first} to #{last} for: #{@query}"
-    @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
-      puts
-      puts "#{i.to_s.rjust num_columns}: #{link.title}"
-      puts "#{' ' * num_columns}  #{link.url}"
+      puts "Page #{@page_number}, showing results #{first} to #{last} for: #{@query}"
+      @links[first_link_index..last_link_index].each.with_index(first) do |link, i|
+        puts
+        puts "#{i.to_s.rjust num_columns}: #{link.title}"
+        puts "#{' ' * num_columns}  #{link.url}"
+      end
+    else
+      # No joy. Let's try a new search...
+      puts "No results for #{@query}!"
+      input_new_search
+      list_links
     end
   end
 
@@ -198,6 +205,7 @@ end
 cli_error opts, 'Query string is required!' if ARGV.empty?
 cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 1
 
+# BUG: No idea why the -n option STAYS in argv ;(
 query = ARGV.join " "
 
 GBrowser.search query, results_per_page: opts[:number]
