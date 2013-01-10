@@ -27,6 +27,7 @@ class GoogleBrowse
     
     @links = [] # All the links retrieved are cached here.
     @agent = Mechanize.new
+    @agent.max_history = 1 # We cache the important data ourselves.
 
     @quit = false
 
@@ -46,8 +47,9 @@ class GoogleBrowse
     @links.clear
 
     # Go to Google home page and create an initial query.
-    google = @agent.get 'http://google.com'
+    google = get 'http://google.com'
     query_form = google.form_with name: 'f'
+    
     query_form.q = @query
 
     query_form.submit query_form.button_with(name: 'btnK')
@@ -55,6 +57,14 @@ class GoogleBrowse
     @more_pages = true
 
     read_links
+  end
+
+  def get(page)
+    page = @agent.get page
+    # Bit of a dumb way to tell whether we managed to find a real google page...
+    # TODO: Has to be a better way to determine this!
+    raise IOError, 'Failed to retrieve Google page' unless page.title =~ /Google/
+    page
   end
 
   def next_page_link
@@ -74,7 +84,7 @@ class GoogleBrowse
       # Cap the page number.
       @page_number = @links.size.div @results_per_page
     else
-      page = @agent.get link
+      get link
       read_links
     end
   end
@@ -251,7 +261,14 @@ cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 
 # BUG: No idea why the -n option STAYS in argv ;(
 query = ARGV.empty? ? nil : ARGV.join(" ")
 
-GoogleBrowse.search query: query, results_per_page: opts[:number]
+begin
+  GoogleBrowse.search query: query, results_per_page: opts[:number]
+rescue => ex
+  puts
+  puts "FATAL ERROR: #{ex.message}"
+  puts
+  exit 0
+end
 
 
 
