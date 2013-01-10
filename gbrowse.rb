@@ -151,12 +151,16 @@ class GBrowser
 
     case input.upcase
     when 'N', '' # Next page.
-      @page_number += 1
-      list_links
+      unless last_page?
+        @page_number += 1 
+        list_links
+      end
 
     when 'P' # Previous page.
-      @page_number -= 1 if @page_number > 1
-      list_links
+      if @page_number > 1
+        @page_number -= 1
+        list_links
+      end
 
     when 'H', '?'
       puts <<-END_OF_TEXT
