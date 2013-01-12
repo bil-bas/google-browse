@@ -10,6 +10,7 @@ module GoogleBrowse
 
   class Browser
     DEFAULT_RESULTS_PER_PAGE = 10
+    MIN_RESULTS_PER_PAGE = 1
     MAX_RESULTS_PER_PAGE = 20 # Avoid being rude to Google.
     BASE_PAGE = 'http://google.com'
     RESULTS_PER_REQUEST = 100 # TODO: Use this! &num=100?
@@ -26,7 +27,7 @@ module GoogleBrowse
       }.merge! options
 
       @results_per_page = [
-          [0, options[:results_per_page]].max,
+          [MIN_RESULTS_PER_PAGE, options[:results_per_page]].max,
           MAX_RESULTS_PER_PAGE
       ].min
       
