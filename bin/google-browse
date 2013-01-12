@@ -21,7 +21,7 @@ exit 0 if opts.help?
 
 def cli_error(opts, message)
   puts "ERROR: #{message}"
-  puts 
+  puts
   puts opts
   exit 0
 end

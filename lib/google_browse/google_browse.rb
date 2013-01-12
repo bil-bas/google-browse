@@ -10,12 +10,12 @@ module GoogleBrowse
 
   class Browser
     DEFAULT_RESULTS_PER_PAGE = 10
+    BASE_PAGE = 'http://google.com'
+    RESULTS_PER_REQUEST = 100 # TODO: Use this! &num=100?
 
     class << self
       def search(*args); new *args; end
     end
-
-    def quit?; @quit end
 
     # @option :results_per_page [Integer] (10) Number of results to show per page.
     # @option :query [String] Initial search string.
@@ -27,8 +27,12 @@ module GoogleBrowse
       @results_per_page = options[:results_per_page]
       
       @links = [] # All the links retrieved are cached here.
-      @agent = Mechanize.new
-      @agent.max_history = 1 # We cache the important data ourselves.
+      @agent = Mechanize.new do |agent|
+        agent.max_history = 1 # We cache the important data ourselves.
+        agent.user_agent = 'Safari' # And why not?
+        agent.user_agent_alias = 'Mac Safari' # And why not?
+        agent.keep_alive = false
+      end
 
       @quit = false
 
@@ -43,31 +47,39 @@ module GoogleBrowse
       navigate until quit?
     end
 
+    protected
     def retrieve_initial_page(query)
       @query = query
       @links.clear
 
       # Go to Google home page and create an initial query.
-      google = get 'http://google.com'
-      query_form = google.form_with name: 'f'
+      get BASE_PAGE
+      query_form = @agent.page.form_with name: /f/
       
+      # Make the search.
       query_form.q = @query
 
       query_form.submit query_form.button_with(name: 'btnK')
+
       @page_number = 0
       @more_pages = true
 
-      read_links
+      parse_links
     end
 
+    protected
     def get(page)
-      page = @agent.get page
-      # Bit of a dumb way to tell whether we managed to find a real google page...
-      # TODO: Has to be a better way to determine this!
-      raise IOError, 'Failed to retrieve Google page' unless page.title =~ /Google/
-      page
+      @agent.get page
+    rescue Net::HTTPServiceUnavailable
+      puts
+      puts "ERROR: HTTPServiceUnavailable"
+      puts "Google has probably temporarily banned you for being a bad bot."
+      puts "You may need to complete a capture on Google to unlock it (AND THEN STOP USING THIS SCRIPT!)."
+      Launchy.open BASE_PAGE
+      @quit = true     
     end
 
+    protected
     def next_page_link
       link = @agent.page.search('table#nav td a').last
       if link 
@@ -77,6 +89,7 @@ module GoogleBrowse
       end
     end
 
+    protected
     def retrieve_next_page
       link = next_page_link
       
@@ -86,17 +99,19 @@ module GoogleBrowse
         @page_number = @links.size.div @results_per_page
       else
         get link
-        read_links
+        parse_links
       end
     end
 
-    def more_pages?; @more_pages end
-
+    protected
     # Parse all the links found on the current page.
-    def read_links
+    def parse_links
       results = @agent.page.search 'li.g'
       results.each do |result|
+        # May be youtube or google images/video links, so ignore these.
         link = result.search('h3.r a').first
+        next unless link
+        
         body = result.search('span.st').first || OpenStruct.new(text: '')
 
         # Extract the proper URL from the link, disregarding any that aren't full uris
@@ -110,9 +125,13 @@ module GoogleBrowse
       end
     end
 
+    protected
+    def quit?; @quit end
+    def more_pages?; @more_pages end
     # Index, in @links, of the first link to show.
     def first_link_index; @page_number * @results_per_page end
 
+    protected
     # Index, in @links, of the last link to show.
     def last_link_index
       if more_pages?
@@ -122,11 +141,13 @@ module GoogleBrowse
       end
     end
 
+    protected
     # Are we showing the last page?
     def last_page?
       !more_pages? && last_link_index == (@links.size - 1)
     end
 
+    protected
     def list_links
       # Ensure we have enough links downloaded to display them.
       retrieve_next_page while last_link_index > @links.size
@@ -153,6 +174,7 @@ module GoogleBrowse
       end
     end
 
+    protected
     def limit_text(text, length)
       if text.size < length
         text
@@ -161,6 +183,7 @@ module GoogleBrowse
       end
     end
 
+    protected
     def navigate
       # Ask the user for instructions.
       puts
@@ -227,6 +250,7 @@ module GoogleBrowse
       puts   
     end
 
+    protected
     def input_new_search
       input = ''
       while input.empty?
