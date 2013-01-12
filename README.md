@@ -6,7 +6,7 @@ browser.
 
 Not really intended for real use, since it is only really a toy.
 
-WARNING: The high traffic from this tool will quickly get Google locking you out thinking that you are an evil scraper!
+WARNING: Used excessively, this tool may get Google locking you out thinking that you are an evil scraper bot! Be careful!
 
 Installation
 ------------
