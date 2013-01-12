@@ -10,6 +10,7 @@ module GoogleBrowse
 
   class Browser
     DEFAULT_RESULTS_PER_PAGE = 10
+    MAX_RESULTS_PER_PAGE = 20 # Avoid being rude to Google.
     BASE_PAGE = 'http://google.com'
     RESULTS_PER_REQUEST = 100 # TODO: Use this! &num=100?
 
@@ -24,7 +25,10 @@ module GoogleBrowse
         results_per_page: 10,
       }.merge! options
 
-      @results_per_page = options[:results_per_page]
+      @results_per_page = [
+          [0, options[:results_per_page]].max,
+          MAX_RESULTS_PER_PAGE
+      ].min
       
       @links = [] # All the links retrieved are cached here.
       @agent = Mechanize.new do |agent|
@@ -111,7 +115,7 @@ module GoogleBrowse
         # May be youtube or google images/video links, so ignore these.
         link = result.search('h3.r a').first
         next unless link
-        
+
         body = result.search('span.st').first || OpenStruct.new(text: '')
 
         # Extract the proper URL from the link, disregarding any that aren't full uris
