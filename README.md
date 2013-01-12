@@ -35,9 +35,9 @@ Usage
 Example output
 --------------
 
-    $ ruby bin/google-browse fish
+    $ google-browse fish
 
-    Google Browse v0.1.1
+    Google Browse v0.1.2
 
 
     Page 1, showing results 1 to 5 for: fish
