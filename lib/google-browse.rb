@@ -3,5 +3,9 @@ require 'bundler/setup'
 require 'mechanize'
 require 'launchy'
 
-require_relative "google_browse/google_browse"
+require 'uri'
+require 'ostruct'
+
+require_relative "google_browse/scraper"
+require_relative "google_browse/browser"
 require_relative "google_browse/version"
