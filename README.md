@@ -30,14 +30,14 @@ Usage
 
     $ google-browse
 
-    $ google-browse "spooner github"
+    $ google-browse -q "spooner github"
 
 Example output
 --------------
 
-    $ google-browse fish
+    $ google-browse -q fish
 
-    Google Browse v0.1.2
+    Google Browse v0.1.3
 
 
     Page 1, showing results 1 to 5 for: fish
