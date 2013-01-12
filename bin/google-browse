@@ -10,7 +10,15 @@ require_relative '../lib/google-browse'
 # Manage CLI options.
 results_per_page = GoogleBrowse::Browser::DEFAULT_RESULTS_PER_PAGE
 opts = Slop.parse help: true do
-  banner "Usage: #{File.basename $0} [options] ['QUERY-STRING']"
+  banner <<-END_OF_TEXT
+Google Browse v#{GoogleBrowse::VERSION}
+
+Usage: #{File.basename $0} [OPTIONS]
+
+Options:
+END_OF_TEXT
+
+  on 'q=', 'query=', "Initial search query"
 
   on 'n=', 'number=', 
     "Number of results per page (default: #{results_per_page})",
@@ -28,13 +36,10 @@ end
 
 cli_error opts, 'Must have 1 or more results per page!' unless opts[:number] >= 1
 
-# BUG: No idea why the -n option STAYS in argv ;(
-query = ARGV.empty? ? nil : ARGV.join(" ")
-
 puts
 puts "Google Browse v#{GoogleBrowse::VERSION}"
 
-GoogleBrowse.search query: query, results_per_page: opts[:number]
+GoogleBrowse.search query: opts[:query], results_per_page: opts[:number]
 
 
 
