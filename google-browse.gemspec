@@ -15,4 +15,8 @@ browser. Not really intended for real use, since it is only really a toy.}
   gem.name          = "google-browse"
   gem.require_paths = ["lib"]
   gem.version       = GoogleBrowse::VERSION
+
+  gem.add_dependency "slop", "~> 3.3.3"
+  gem.add_dependency "mechanize", "~> 2.5.1"
+  gem.add_dependency "launchy", "~> 2.1.2"
 end
